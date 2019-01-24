@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="/socket.io/socket.io.js" type="application/javascript"></script>
+    <style>
+        textarea{width:15%; height:200px; vertical-align:top;} 
+        #title_box{margin-bottom:10px;}
+        #contents_box{margin-bottom:10px;}
+        select{width:80px; height:25px;}
+        button{margin-bottom:10px;}
+    </style>
+    <script>
+        $(function(){
+            var socket = io('/<%= title %>');
+            var data = {};
+            $('.goBtn').on('click', function(){
+                var evtTaget = $(this).attr('id');
+                data = {};
+                data.name = 'admin';
+                data.title = $('#title').val();
+                data.contents = $('#contents').val();
+                if(evtTaget == 'chBtn'){
+                    data.channel = "channel"+$('#channel').val();
+                }else if(evtTaget == 'roomBtn'){
+                    data.channel = "channel"+$('#channel').val();
+                    if($('#room').val() != 'All'){
+                        data.room = "room"+$('#room').val();    
+                    }
+                }
+                socket.emit('adminMsg', data);
+            })
+            socket.on('sendMsgResult', function(data){
+                alert("전송완료");
+            })
+        })  
+    </script>
+  </head>
+  <body>
+    <h1>관리자 페이지</h1>
+    <div class="box">
+        <div id="title_box">
+            <label for="title">제목 : </label><input id="title" type="text">
+        </div>
+        <div id="contents_box">
+            <span>내용 : </span><textarea id="contents"></textarea>
+        </div>
+    </div>
+    <div>
+        <span>전체공지 : </span><button id="allBtn" class="goBtn">전체보내기</button>
+        <br/>
+        <span>채널공지 : </span>
+        <select id="channel">
+            <option value="01">채널01</option>
+            <option value="02">채널02</option>
+            <option value="03">채널03</option>
+        </select>
+        <button id="chBtn" class="goBtn">보내기</button>
+        <br/>
+        <span>&nbsp;방 공지 : </span>
+        <select id="room">
+            <option value="All">전체</option>
+            <option value="01">방01</option>
+            <option value="02">방02</option>
+            <option value="03">방03</option>
+        </select>
+        <button id="roomBtn" class="goBtn">보내기</button>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>chnnel</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel="stylesheet" href='/stylesheets/channel.css' />
+    <style>
+        .menu{float:left; display:inline-block;}
+        li{list-style-type:none;}
+        ul{padding-left:10px; padding-right:10px;}
+        h1{margin:0;}
+        p{display : inline-block;}
+        #chat_Yn{display:none;}
+        #exitBtn{display:none; width:60px; margin-bottom:10px;}
+        .notice{
+            border-bottom: 1px solid black;
+            border-bottom-style: dotted;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="/socket.io/socket.io.js" type="application/javascript"></script>
+    <script>
+        
+        $(function(){
+            var socket = io('/<%=chName%>');
+            var entryObj = {};
+            var chatInfo = {};
+            //서버로부터 받는 메시지 이벤트들
+            socket.on('roomChatMsg', function(data){
+                $("#messages").append($("<li style='text-align:right'>").text(data.name+" : "+data.value));  
+                $('#scroll_posi').scrollTop($('#scroll_posi')[0].scrollHeight);
+            });
+            socket.on('roomExitMsg', function(data){
+                $("#messages").append($("<li style='color:blue'>").text(data));
+            });
+            socket.on('roomEntryMsg', function(data){
+                $("#messages").append($("<li style='color:blue'>").text(data));
+            });
+            socket.on('getAdminMsg', function(data){  
+                $("#messages").append($("<li style='color:#e91e63'>").text("[공지사항] "+data.name+" : "+data.title));
+                $("#messages").append($("<li class='notice' style='color:#524b4d'>").text("내용 : "+data.contents));
+            });
+            //방입장
+            $('.entryBtn').on('click', function(e){
+                e.preventDefault();
+                console.log(entryObj.roomNum)
+                //입장 전 기존 방 있을 경우 방나옴
+                if(entryObj.roomNum != undefined && entryObj.roomNum != null && entryObj.roomNum != ""){
+                    socket.emit('outRoom', entryObj);
+                }
+                entryObj.name = $('#name').val();
+                entryObj.roomNum = $(this).attr('id');
+                if(entryObj.name != "" && entryObj.roomNum !=""){
+                    try{
+                        $('#messages').empty();
+                        socket.emit('joinRoom', entryObj);
+                        $('#chat_Yn').css('display', 'block');
+                        $('#exitBtn').css('display', 'inline');
+                    }catch(error){
+                        console.log(error);
+                        alert('room 접속실패');
+                    }    
+                }else{
+                    alert("이름을 입력해주세요");
+                }
+                
+            })
+            //방 나가기
+            $('#exitBtn').on('click', function(e){
+                e.preventDefault();
+                entryObj.name = $('#name').val();
+                $('#messages').empty();
+                socket.emit('outRoom', entryObj);
+                entryObj.roomNum = "";
+                $('#chat_Yn').css('display', 'none');
+                $('#exitBtn').css('display', 'none');
+            });
+            //엔터키 활성화
+            $('#send').keydown(function(key){
+                if(key.keyCode==13){
+                    $("#textSubmit").trigger('click');
+                }
+            })
+            //전송버튼 이벤트
+            $('#textSubmit').on('click', function(e){
+                e.preventDefault();    
+                chatInfo.value = $('#send').val();
+                chatInfo.name = entryObj.name;
+                if(chatInfo.name == "" && chatInfo.name == null && chatInfo.name ==undefined){
+                    alert('성함을 입력해주십시오.');
+                    return false;
+                }else{
+                    socket.emit('roomChat', chatInfo);    
+                }
+                 $('#send').val("");
+            });
+        })
+    </script>
+  </head>
+  <body>
+    <div class="menu">
+        <h1>ROOM LIST</h1>
+        <p><span>이름 : </span><input type="text" id="name" placeholder="이름입력후 입장버튼 클릭"></p>
+        <p style="margin-left:10px;"><span>room01 : </span><button class="entryBtn" id="room01">입장</button></p>
+        <p><span>room02 : </span><button class="entryBtn" id="room02">입장</button></p>
+        <p><span>room03 : </span><button class="entryBtn" id="room03">입장</button></p>
+    </div>
+    <button id="exitBtn">나가기</button>
+    <div id="chat_Yn">
+        <div class="chat__block">
+        <div class="chat__form-top" id="scroll_posi">
+        <ul id="messages"></ul>
+        </div>
+        <div class="chat__form-bottom">
+        <input type="text" class="chat__form-input" id="send">
+        <button class="chat__form-button" id="textSubmit">전송</button>
+    </div>
+</div>  
+      
+    </div>
+  </body>
+</html>
